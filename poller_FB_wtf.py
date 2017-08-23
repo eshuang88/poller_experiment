@@ -6,7 +6,7 @@ import pandas as pd
 import ast
 import csv
 
-data = pd.read_csv('/Users/y/Desktop/Poller_experi/0804_FB_newsDeep.csv')
+data = pd.read_csv('/Users/y/Desktop/poller_dump/0804_FB_newsDeep.csv')
 # merge column "message" and column "description" as a string
 # create a column named "allText"
 data = data.assign(
