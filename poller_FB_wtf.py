@@ -82,7 +82,7 @@ word_count_sorted = sorted(word_count, key=word_count.get, reverse=True) # it's 
 
 # create a customized term filter for Poller
 # DO NOT MESS WITH purewords/config/stopwords.text. Must create another filter.
-filter_word = pd.read_csv('/Users/y/Desktop/poller_filter.txt', sep=",", header=None, engine='python')
+filter_word = pd.read_csv('/Users/y/Desktop/poller_experiment/poller_filter.txt', sep=",", header=None, engine='python')
 filter_words = filter_word[0].tolist() # is a list
 
 # create another list named word_count_clean
