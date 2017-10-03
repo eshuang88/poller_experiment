@@ -5,16 +5,16 @@ Wordcloud, NLP playground.
 - PTT and Facebook are the most popular social media sites in Taiwan, a traditional Chinese speaking country.
 - We would like to figure out the trending topics and terms on these sites.
 - Here's how it works:
-  1. Split the article titles and contents into terms, using jieba, a Chinese word segmentation module.
+  **Step 1.** Split the article titles and contents into terms, using jieba, a Chinese word segmentation module.
   	- You can find it here: https://pypi.python.org/pypi/jieba/
-  2. Calculate the popularity score, weighted term frequency (WTF), for each term.
+  **Step 2.** Calculate the popularity score, weighted term frequency (WTF), for each term.
   	- For instance, there are three articles, A, B, and C.
   	  - (article, comments) is (A, 120), (B, 250), (C, 60)
   	    - if "柴犬"(Shiba Inu) appears in A, B
   	      - wtf of 柴犬 = 370
   	    - if "哈士奇"(Husky) appears in B, C
   	      - wtf of 哈士奇 = 310
-  3. The final output should be a 2-dimensional array of ("term", wtf).
+  **Step 3.** The final output should be a 2-dimensional array of ("term", wtf). A .csv file is preffered.
 
 
 ## Datasets
