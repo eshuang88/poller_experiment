@@ -1,130 +1,114 @@
 # encoding: utf-8
-from collections import Counter
-import purewords as pw
-import numpy as np
+import sys
+from collections import defaultdict
+
 import pandas as pd
-import ast
-import csv
+import json
+
 import jieba
 
-from joblib import Parallel, delayed 
 from tqdm import tqdm
+from joblib import Parallel, delayed
 
 
-data = pd.read_csv('/Users/y/Desktop/poller_dump/Gossiping09010930.csv')
+class TrieNode(object):
+    '''Trie - https://en.wikipedia.org/wiki/Trie'''
 
-# merge column "message" and column "description" as a string
+    def __init__(self):
+        self.final = False
+        self.children = {}
+
+    def __contains__(self, letters, index=0):
+        if index < 0 and len(letters) < index:
+            return False
+        if len(letters) == index:
+            return self.final
+        elif letters[index] in self.children:
+            return self.children[letters[index]].__contains__(
+                letters,
+                index + 1
+            )
+        else:
+            return False
+
+    def add(self, letters, index=0):
+        if index < 0 and len(letters) < index:
+            return
+        if len(letters) == index:
+            self.final = True
+        else:
+            if letters[index] not in self.children:
+                self.children[letters[index]] = TrieNode()
+            self.children[letters[index]].add(
+                letters,
+                index + 1
+            )
+
+
+# ============data cleaning starts here================
+
+data = pd.read_csv('PTT_dataset.csv')
+
+# merge column "title" and column "body" as a string
 # create a column named "allText"
 data = data.assign(
-    allText = (data['title'].astype(str) + data['body'].astype(str))
-    )
+    allText=(data['title'].astype(str) + data['body'].astype(str))
+)
 
 # compute article popularity as total comments
-# comments_list = ast.literal_eval(data['comments'].tolist()[5])
-# comments final count
-comments_home = []
-comments_final = []
-
-for c in tqdm(data['comments'].tolist()):
-    parsed_c = ast.literal_eval(c)
-    # get value
-    comments_home.append(parsed_c)
-    #print(parsed_l[-1])
-
-# each "likes_dict" is a dict, thus we need more engineering
-for comments_dict in tqdm(comments_home):
-    comments_dict_list = list(comments_dict.values())[0]
-    # get the first value from the list
-    comments_final.append(comments_dict_list)
-# now we have integers appended in the list!
-
+# each 'comments' is a dict, thus we need use json
 data = data.assign(
-    totalComments = comments_final,
-    )
+    totalComments=data['comments'].apply(
+        lambda x: json.loads(x)['total_count']),
+)
 
-# done data cleaning!
+# ============data cleaning ends here================
 
-#============term score calculation starts here================
+# ============term score calculation starts here================
 
 # create a customized term filter for Poller
 # DO NOT MESS WITH purewords/config/stopwords.text. Must create another filter.
-filter_word = pd.read_csv('/Users/y/Desktop/poller_experiment/poller_filter.txt', sep=",", header=None, engine='python')
-filter_words = filter_word[0].values.astype(str).tolist()
-# print(filter_words.shape)
-# text splitting using purewords
-texts_clean = data['allText'][0:100].apply(lambda x: ' '.join(jieba.lcut(x))).str.cat(sep=' ')
-print(len(texts_clean))
-#texts_clean = jieba.lcut(texts)
-#texts_clean = pw.clean_sentence(texts)
-#print('pw')
-#texts_clean = texts_clean.split()
-print('split')
-texts_array = texts_clean.split(' ')
-print('are you dead?')
-#cleaned = np.setdiff1d(texts_array.astype(str), filter_words[:, 0].astype(str))
-# is an unique np array
-import ipdb; ipdb.set_trace()
+
+
+word_filter = TrieNode()
+
+with open('poller_filter.txt') as f:
+    # word_filter = f.read().splitlines()
+    for eword in f.read().splitlines():
+        word_filter.add(eword)
 
 # create a baba of "weighted term frequency(wtf)"
 # prolly looks like this: ('柯文哲': 2819730), ('馬英九': 467383)
 # sort by word_count_sorted
-# term_wtf_list = []
-# unique_cleaned = []
-data_list = []
-for idx in tqdm(range(data.shape[0])[0:10]):
-    data_list += [{'text': str(data[idx: idx+1]['allText'].values[0]), 
-                   'score': int(data[idx: idx+1]['totalComments'].values[0])}]
-
-def count_score(t, filter_words, data_list):
-    if t not in filter_words:
-        term_num = 0
-        for datum in data_list:
-            if t in datum['text']:
-                term_num += datum['score']
-        # term_num = data[data['allText'].apply(lambda x: t in x)]['totalComments'].sum()
-        return t, term_num
-    else:
-        return t, 0
-import ipdb; ipdb.set_trace() # it works!
- 
-# result = [] 
-# for t in tqdm(list(set(texts_array))):
-#     result += [count_score(t, filter_words, data)]
 
 
-result = Parallel(n_jobs=-1, verbose=2)(
-        delayed(count_score)(t, filter_words, data_list) for t in list(set(texts_array))
+def clean_text(allText):
+    return set(e for e in jieba.lcut(allText) if e not in word_filter)
+
+
+print("Starting parallel jobs..")
+
+try:
+    cleaned_text = Parallel(n_jobs=-1)(
+        delayed(clean_text)
+        (erow['allText']) for i, erow in tqdm(data.iterrows())
     )
-import ipdb; ipdb.set_trace()
+except KeyboardInterrupt:
+    print("\n\nExiting..")
+    sys.exit(1)
+
+wtf_data = defaultdict(int)
+
+for i, erow in tqdm(data.iterrows()):
+    for eword in cleaned_text[i]:
+        wtf_data[eword] += erow['totalComments']
 
 
-    # certain term's score in certain article
-    # always reset to zero as we loop through another term
-    #term_num = data[data['allText'].apply(lambda x: t in x)]['totalComments'].sum()
-    # for index, article in data.iterrows():
-    #     article_score = article['totalComments']
-    #     if t in article['allText']:
-    #         term_num += article_score
-            # term_certain_tmp_list.append(term_num)
-            # term_certain_max = max(term_certain_tmp_list)
-    # derive max value and append it to term's list
-    # term_wtf_list.append(term_certain_max)
-    
+term_final_list = list(wtf_data.items())
+term_final_list.sort(key=lambda x: (x[1], x[0]), reverse=True)
 
-print(term_wtf_list[0:10])
-import ipdb; ipdb.set_trace()
-
-# create a clean and sorted list of unique terms(sorted by wtf)
-term_sorted_list = [] 
-for i in cleaned:
-    term_sorted_list.append(i)
-
-# 馬英九：25071, 柯文哲：3196, 的：337202
-
-# combine term & wtf
-term_wtf_combined = list(zip(term_sorted_list, term_wtf_list))
-term_final_list = sorted(term_wtf_combined, key=lambda x: x[1], reverse=True) # 完成！
+# ============term score calculation ends here================
 
 # export the dataframe as csv!
 final_data = pd.DataFrame(term_final_list, columns=['PTT_term', 'PTT_wtf'])
-final_data.to_csv('PTT_WTF_numpytry_gossiping.csv', header=True)
+final_data.to_csv('PTT_WTF_numpytry_gossiping.csv', header=True, index=False)
