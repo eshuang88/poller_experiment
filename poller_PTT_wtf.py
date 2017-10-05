@@ -18,31 +18,21 @@ class TrieNode(object):
         self.final = False
         self.children = {}
 
-    def __contains__(self, letters, index=0):
-        if index < 0 and len(letters) < index:
-            return False
-        if len(letters) == index:
-            return self.final
-        elif letters[index] in self.children:
-            return self.children[letters[index]].__contains__(
-                letters,
-                index + 1
-            )
-        else:
-            return False
+    def __contains__(self, letters):
+        curr_node = self
+        for letter in letters:
+            if letter not in curr_node.children:
+                return False
+            curr_node = curr_node.children[letter]
+        return curr_node.final
 
-    def add(self, letters, index=0):
-        if index < 0 and len(letters) < index:
-            return
-        if len(letters) == index:
-            self.final = True
-        else:
-            if letters[index] not in self.children:
-                self.children[letters[index]] = TrieNode()
-            self.children[letters[index]].add(
-                letters,
-                index + 1
-            )
+    def add(self, letters):
+        curr_node = self
+        for letter in letters:
+            if letter not in curr_node.children:
+                curr_node.children[letter] = TrieNode()
+            curr_node = curr_node.children[letter]
+        curr_node.final = True
 
 
 # ============data cleaning starts here================
