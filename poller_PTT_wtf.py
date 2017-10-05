@@ -71,9 +71,11 @@ with open('poller_filter.txt') as f:
 # prolly looks like this: ('柯文哲': 2819730), ('馬英九': 467383)
 # sort by word_count_sorted
 
+jieba.initialize()
+
 
 def clean_text(allText):
-    return set(e for e in jieba.lcut(allText) if e not in word_filter)
+    return set(e for e in jieba.cut(allText) if e not in word_filter)
 
 
 print("Starting parallel jobs..")
