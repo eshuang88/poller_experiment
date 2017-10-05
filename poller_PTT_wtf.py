@@ -91,9 +91,9 @@ except KeyboardInterrupt:
 
 wtf_data = defaultdict(int)
 
-for i, erow in tqdm(data.iterrows()):
-    for eword in cleaned_text[i]:
-        wtf_data[eword] += erow['totalComments']
+for words, totalComments in tqdm(zip(cleaned_text, data['totalComments'])):
+    for eword in words:
+        wtf_data[eword] += totalComments
 
 
 term_final_list = list(wtf_data.items())
