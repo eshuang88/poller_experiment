@@ -29,13 +29,13 @@ Wordcloud, NLP playground.
 
 
 ## poller_FB_wtf.txt
-- Source code of Poller's wordcloud experiment.
+- Source code of Poller's wordcloud experiment for Facebook.
   - **WTF** : Weighted Term Frequency, the index that evaluates the importance of a term.
   - **5foreach** : The 5 most important articles for each term.
     - Note that in the source code there's a module named "Purewords". It's not available. Please use jieba instead.
 
-## poller_FB_wtf.txt
-- Source code of Poller's wordcloud experiment.
+## poller_PTT_wtf.txt
+- Source code of Poller's wordcloud experiment for PTT.
   - **WTF** : Weighted Term Frequency, the index that evaluates the importance of a term.
   - **5foreach** : The 5 most important articles for each term.
 
